@@ -6,11 +6,13 @@ from PIL import Image
 from sklearn.preprocessing import LabelEncoder
 import keras
 from keras import layers, models
+import tensorflow as tf
 import matplotlib.pyplot as plt
 import pickle
 import seaborn as sns
 from sklearn.metrics import classification_report, confusion_matrix, roc_curve, auc
 import config as cfg
+
 
 def load_data(base_dir=cfg.BASE_DIR, json_path=cfg.JSON_PATH):
     """
@@ -205,46 +207,68 @@ def load_best_model(checkpoint_dir=cfg.CHECKPOINT_DIR):
 def evaluate_existing_model(model_path=cfg.MODEL_SAVE_PATH, data_dir=None, json_path=None):
     """
     Evaluate an existing trained model on test data
+    Supports both .h5 and SavedModel (.pb) formats
+    
+    Parameters:
+    model_path (str): Path to either .h5 model file or SavedModel directory
+    data_dir (str): Directory containing the test images
+    json_path (str): Path to the JSON file with labels
+    
+    Returns:
+    tuple: (accuracy, classification_report)
     """
     print("Loading saved model...")
-    model = keras.models.load_model(model_path)
-    
-    with open(cfg.LABEL_ENCODER_PATH, 'rb') as f:
-        label_encoder = pickle.load(f)
-    
-    if data_dir is None:
-        data_dir = cfg.BASE_DIR
-    if json_path is None:
-        json_path = cfg.JSON_PATH
-    
-    print("Loading test data...")
-    images, labels, _ = load_data(data_dir, json_path)
-    
-    test_images = images[cfg.TRAIN_SIZE:cfg.TRAIN_SIZE + cfg.TEST_SIZE]
-    test_labels = labels[cfg.TRAIN_SIZE:cfg.TRAIN_SIZE + cfg.TEST_SIZE]
-    
-    print("Evaluating model...")
-    test_loss, test_accuracy = model.evaluate(test_images, test_labels, verbose=1)
-    print(f"\nTest accuracy: {test_accuracy:.4f}")
-    
-    predictions = model.predict(test_images)
-    predicted_classes = np.argmax(predictions, axis=1)
-    true_classes = np.argmax(test_labels, axis=1)
-    
-    report = classification_report(
-        true_classes,
-        predicted_classes,
-        target_names=label_encoder.classes_,
-        output_dict=True
-    )
-    print("\nClassification Report:")
-    print(classification_report(
-        true_classes,
-        predicted_classes,
-        target_names=label_encoder.classes_
-    ))
-    
-    return test_accuracy, report
+    try:
+        # Check if the path is a directory (SavedModel) or file (.h5)
+        if os.path.isdir(model_path):
+            # Load SavedModel format
+            model = tf.keras.models.load_model(model_path)
+            print("Loaded SavedModel format from directory")
+        else:
+            # Load .h5 format
+            model = keras.models.load_model(model_path)
+            print("Loaded .h5 model file")
+            
+        with open(cfg.LABEL_ENCODER_PATH, 'rb') as f:
+            label_encoder = pickle.load(f)
+        
+        if data_dir is None:
+            data_dir = cfg.BASE_DIR
+        if json_path is None:
+            json_path = cfg.JSON_PATH
+        
+        print("Loading test data...")
+        images, labels, _ = load_data(data_dir, json_path)
+        
+        test_images = images[cfg.TRAIN_SIZE:cfg.TRAIN_SIZE + cfg.TEST_SIZE]
+        test_labels = labels[cfg.TRAIN_SIZE:cfg.TRAIN_SIZE + cfg.TEST_SIZE]
+        
+        print("Evaluating model...")
+        test_loss, test_accuracy = model.evaluate(test_images, test_labels, verbose=1)
+        print(f"\nTest accuracy: {test_accuracy:.4f}")
+        
+        predictions = model.predict(test_images)
+        predicted_classes = np.argmax(predictions, axis=1)
+        true_classes = np.argmax(test_labels, axis=1)
+        
+        report = classification_report(
+            true_classes,
+            predicted_classes,
+            target_names=label_encoder.classes_,
+            output_dict=True
+        )
+        print("\nClassification Report:")
+        print(classification_report(
+            true_classes,
+            predicted_classes,
+            target_names=label_encoder.classes_
+        ))
+        
+        return test_accuracy, report
+        
+    except Exception as e:
+        print(f"Error evaluating model: {str(e)}")
+        return None, None
 
 def predict_single_image(image_path, model_path=cfg.MODEL_SAVE_PATH):
     """
