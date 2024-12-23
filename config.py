@@ -12,8 +12,8 @@ MODEL_SAVE_PATH = 'trained_model'
 LABEL_ENCODER_PATH = 'label_encoder.pkl'
 
 # Training configuration
-TRAIN_SIZE = 18000
-TEST_SIZE = 2000
+TRAIN_SIZE = 19500
+TEST_SIZE = 500
 VALIDATION_SPLIT = 0.2
 BATCH_SIZE = 32
 EPOCHS = 30
