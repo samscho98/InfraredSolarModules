@@ -4,7 +4,7 @@ A machine learning model based on an existing dataset. For more information see 
 
 ## Installation
 
-Download the [dataset](https://github.com/RaptorMaps/InfraredSolarModules) and copy the images into /data/InfraredSolarModules/images.
+Unzip data/2020-02-14_InfraredSolarModules.zip and place the images folder in data/InfraredSolarModules or download the [dataset](https://github.com/RaptorMaps/InfraredSolarModules) and copy the images into /data/InfraredSolarModules/images.
 
 ## Usage
 
